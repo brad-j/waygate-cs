@@ -1,4 +1,4 @@
-//! The only state cs writes: done marks, pane widths and cached summaries.
+//! The only state waygate writes: done marks, pane widths and cached summaries.
 //! Claude Code's own files are never modified.
 
 use std::{collections::HashMap, fs, path::PathBuf};
@@ -27,6 +27,12 @@ pub struct Summary {
 }
 
 fn path() -> Option<PathBuf> {
+    dirs::data_dir().map(|d| d.join("waygate").join("state.json"))
+}
+
+/// Where state lived before the rename from cs. Read only, as a fallback
+/// until the first save writes the new path.
+fn old_path() -> Option<PathBuf> {
     dirs::data_dir().map(|d| d.join("cs").join("state.json"))
 }
 
@@ -34,6 +40,7 @@ impl Store {
     pub fn load() -> Self {
         path()
             .and_then(|p| fs::read(p).ok())
+            .or_else(|| fs::read(old_path()?).ok())
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or_default()
     }

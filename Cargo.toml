@@ -1,5 +1,5 @@
 [package]
-name = "cs"
+name = "waygate"
 version = "0.1.0"
 edition = "2024"
 description = "A terminal board for your Claude Code sessions: find, read and resume them."
@@ -8,7 +8,7 @@ keywords = ["claude", "claude-code", "tui", "terminal", "sessions"]
 categories = ["command-line-utilities"]
 
 [[bin]]
-name = "cs"
+name = "waygate"
 path = "src/main.rs"
 
 [dependencies]

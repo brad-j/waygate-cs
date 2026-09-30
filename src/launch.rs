@@ -7,7 +7,7 @@ use std::{
 };
 
 pub fn claude_bin() -> String {
-    std::env::var("CS_CLAUDE").unwrap_or_else(|_| "claude".into())
+    std::env::var("WAYGATE_CLAUDE").unwrap_or_else(|_| "claude".into())
 }
 
 pub enum Resume {
@@ -19,7 +19,7 @@ pub enum Resume {
 
 /// Opens `claude --resume <id>` in a new tab of the current terminal.
 pub fn resume_in_new_tab(cwd: &str, id: &str) -> Result<Resume, String> {
-    if std::env::var("CS_RESUME").is_ok_and(|v| v == "here") {
+    if std::env::var("WAYGATE_RESUME").is_ok_and(|v| v == "here") {
         return Ok(Resume::Here);
     }
     let cmd = format!("{} --resume {}", claude_bin(), id);

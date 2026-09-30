@@ -301,22 +301,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cs"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "dirs",
- "nucleo-matcher",
- "ratatui",
- "rayon",
- "serde",
- "serde_json",
- "tachyonfx",
- "unicode-width",
-]
-
-[[package]]
 name = "csscolorparser"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1814,6 +1798,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "waygate"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "nucleo-matcher",
+ "ratatui",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tachyonfx",
+ "unicode-width",
 ]
 
 [[package]]

@@ -71,7 +71,7 @@ impl Indexer {
         let mut me = Self { root, by_path };
         let cold = me.by_path.is_empty();
         if cold {
-            eprint!("cs: indexing sessions...");
+            eprint!("waygate: indexing sessions...");
         }
         if me.refresh()? || force {
             me.save();
@@ -158,7 +158,7 @@ fn projects_root() -> PathBuf {
 }
 
 fn cache_path() -> Option<PathBuf> {
-    dirs::cache_dir().map(|d| d.join("cs").join("index.json"))
+    dirs::cache_dir().map(|d| d.join("waygate").join("index.json"))
 }
 
 fn read_cache() -> Option<CacheFile> {
