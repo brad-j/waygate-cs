@@ -1,0 +1,29 @@
+[package]
+name = "cs"
+version = "0.1.0"
+edition = "2024"
+description = "A terminal board for your Claude Code sessions: find, read and resume them."
+readme = "README.md"
+keywords = ["claude", "claude-code", "tui", "terminal", "sessions"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "cs"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+dirs = "7"
+nucleo-matcher = "0.3"
+ratatui = "0.30"
+rayon = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+tachyonfx = { version = "0.25", default-features = false, features = ["std"] }
+unicode-width = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
