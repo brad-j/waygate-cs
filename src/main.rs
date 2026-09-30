@@ -1,4 +1,4 @@
-//! waygate: a terminal board for your Claude Code sessions.
+//! waygate-cs: a terminal board for your Claude Code sessions.
 
 mod app;
 mod index;
@@ -27,20 +27,20 @@ use ratatui::{
 use crate::{app::App, index::Indexer};
 
 const HELP: &str = "\
-waygate: a terminal board for your Claude Code sessions
+waygate-cs: a terminal board for your Claude Code sessions
 
 Usage:
-  waygate              open the board
-  waygate --list       print sessions as plain text, newest first
-  waygate --reindex    rebuild the index from scratch, then open the board
-  waygate --help       this help
-  waygate --version    print the version
+  waygate-cs              open the board
+  waygate-cs --list       print sessions as plain text, newest first
+  waygate-cs --reindex    rebuild the index from scratch, then open the board
+  waygate-cs --help       this help
+  waygate-cs --version    print the version
 
 Environment:
-  CLAUDE_CONFIG_DIR       where Claude Code keeps its data (default ~/.claude)
-  WAYGATE_CLAUDE          the claude binary to launch (default claude)
-  WAYGATE_RESUME=here     always resume in place instead of a new tab
-  WAYGATE_SUMMARY_MODEL   model for catch-me-up summaries (default haiku)
+  CLAUDE_CONFIG_DIR          where Claude Code keeps its data (default ~/.claude)
+  WAYGATE_CS_CLAUDE          the claude binary to launch (default claude)
+  WAYGATE_CS_RESUME=here     always resume in place instead of a new tab
+  WAYGATE_CS_SUMMARY_MODEL   model for catch-me-up summaries (default haiku)
 
 Press ? inside the board for keys and mouse controls.";
 
@@ -54,18 +54,18 @@ fn main() -> Result<()> {
                 return Ok(());
             }
             "-V" | "--version" => {
-                println!("waygate {}", env!("CARGO_PKG_VERSION"));
+                println!("waygate-cs {}", env!("CARGO_PKG_VERSION"));
                 return Ok(());
             }
             "--list" => return list(),
             "--reindex" => force = true,
-            other => bail!("unknown argument: {other} (try waygate --help)"),
+            other => bail!("unknown argument: {other} (try waygate-cs --help)"),
         }
     }
 
     let indexer = Indexer::load(force)?;
     if !stdout().is_terminal() {
-        bail!("waygate needs a terminal; use waygate --list for plain output");
+        bail!("waygate-cs needs a terminal; use waygate-cs --list for plain output");
     }
     if indexer.sessions().is_empty() {
         println!("No Claude Code sessions found in {}", indexer.root().display());
@@ -133,7 +133,7 @@ fn list() -> Result<()> {
             s.id,
             index::one_line(&s.title, 70)
         );
-        // A closed pipe (waygate --list | head) just means the reader has enough.
+        // A closed pipe (waygate-cs --list | head) just means the reader has enough.
         if line.is_err() {
             break;
         }

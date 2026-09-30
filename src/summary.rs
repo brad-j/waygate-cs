@@ -36,12 +36,12 @@ pub fn spawn(id: String, updated: i64, path: PathBuf, tx: Sender<Done>) {
 fn run(path: &std::path::Path) -> Result<String, String> {
     let body = transcript::plain_text(path, 60_000).map_err(|e| e.to_string())?;
     let input = format!("{PROMPT}{body}\n</transcript>");
-    let model = std::env::var("WAYGATE_SUMMARY_MODEL").unwrap_or_else(|_| "haiku".into());
+    let model = std::env::var("WAYGATE_CS_SUMMARY_MODEL").unwrap_or_else(|_| "haiku".into());
     // Strip everything a summary does not need: MCP servers, skills and tools
     // can add hundreds of thousands of tokens to every request otherwise.
     // Claude Code creates an (empty) project folder for whatever directory it
     // runs in, so run from our own cache folder to keep that to one.
-    let workdir = dirs::cache_dir().map(|d| d.join("waygate")).unwrap_or_else(std::env::temp_dir);
+    let workdir = dirs::cache_dir().map(|d| d.join("waygate-cs")).unwrap_or_else(std::env::temp_dir);
     let _ = std::fs::create_dir_all(&workdir);
     let mut child = Command::new(claude_bin())
         .args([

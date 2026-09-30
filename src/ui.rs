@@ -92,7 +92,7 @@ fn draw_top(f: &mut Frame, app: &mut App, area: Rect) {
     let waiting = app.waiting_count();
     let live = app.live_count();
     let mut left = vec![
-        Span::styled(" ◆ waygate ", theme::label()),
+        Span::styled(" ◆ waygate-cs ", theme::label()),
         Span::styled(format!("  {} sessions", app.sessions.len()), theme::dim()),
     ];
     if waiting > 0 {
@@ -904,7 +904,7 @@ fn draw_toast(f: &mut Frame, app: &App, screen: Rect) -> Option<Rect> {
 fn draw_help(f: &mut Frame, screen: Rect) {
     let keys: &[(&str, &str)] = &[
         ("↵ / double-click", "resume in a new tab"),
-        ("R", "resume here, replacing waygate"),
+        ("R", "resume here, replacing waygate-cs"),
         ("/", "search titles, prompts and replies"),
         ("w", "toggle Waiting on me"),
         ("d / click ●", "mark done or not done"),
@@ -946,7 +946,7 @@ fn draw_help(f: &mut Frame, screen: Rect) {
             TuiBlock::bordered()
                 .border_type(BorderType::Rounded)
                 .border_style(theme::accent())
-                .title(Line::from(Span::styled(" waygate · keys and mouse ", theme::label())))
+                .title(Line::from(Span::styled(" waygate-cs · keys and mouse ", theme::label())))
                 .style(Style::new().bg(theme::MENU_BG)),
         ),
         rect,

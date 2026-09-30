@@ -1,14 +1,17 @@
 [package]
-name = "waygate"
+name = "waygate-cs"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.88"
+license = "MIT"
 description = "A terminal board for your Claude Code sessions: find, read and resume them."
 readme = "README.md"
+repository = "https://github.com/brad-j/waygate-cs"
 keywords = ["claude", "claude-code", "tui", "terminal", "sessions"]
 categories = ["command-line-utilities"]
 
 [[bin]]
-name = "waygate"
+name = "waygate-cs"
 path = "src/main.rs"
 
 [dependencies]
@@ -27,3 +30,7 @@ unicode-width = "0.2"
 lto = true
 codegen-units = 1
 strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
