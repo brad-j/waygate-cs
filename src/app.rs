@@ -31,7 +31,6 @@ const LIVE_WINDOW_MS: i64 = 90_000;
 const WAITING_MAX_AGE_MS: i64 = 14 * 86_400_000;
 const POLL_EVERY: Duration = Duration::from_secs(2);
 const DOUBLE_CLICK: Duration = Duration::from_millis(400);
-pub const SPARK_DAYS: usize = 30;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Focus {
@@ -133,7 +132,6 @@ pub struct Project {
     pub waiting: usize,
     pub live: usize,
     pub updated: i64,
-    pub spark: [u32; SPARK_DAYS],
 }
 
 /// Screen regions from the last draw, for mouse hit-testing.
@@ -362,7 +360,6 @@ impl App {
             })
             .collect();
 
-        let today = self.now / 86_400_000;
         let mut by_cwd: HashMap<&str, Project> = HashMap::new();
         for s in &self.sessions {
             let waiting = self.is_waiting(s);
@@ -374,18 +371,11 @@ impl App {
                 waiting: 0,
                 live: 0,
                 updated: 0,
-                spark: [0; SPARK_DAYS],
             });
             p.count += 1;
             p.waiting += waiting as usize;
             p.live += live as usize;
             p.updated = p.updated.max(s.updated);
-            for &t in &s.prompt_times {
-                let age = today - t / 86_400_000;
-                if (0..SPARK_DAYS as i64).contains(&age) {
-                    p.spark[SPARK_DAYS - 1 - age as usize] += 1;
-                }
-            }
         }
         let mut projects: Vec<Project> = by_cwd.into_values().collect();
         let base = |cwd: &str| -> String {

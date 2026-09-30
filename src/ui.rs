@@ -16,7 +16,7 @@ use tachyonfx::{Interpolation, fx};
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::{
-    app::{Action, App, Border, Focus, Hover, Link, SPARK_DAYS, View, ago, clock, tilde},
+    app::{Action, App, Border, Focus, Hover, Link, View, ago, clock, tilde},
     index::{Session, one_line},
     markdown::{self, Block},
     theme,
@@ -24,7 +24,6 @@ use crate::{
 };
 
 const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const BARS: [char; 8] = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 pub fn draw(f: &mut Frame, app: &mut App, elapsed: Duration) {
     let area = f.area();
@@ -240,14 +239,6 @@ fn draw_projects(f: &mut Frame, app: &mut App, area: Rect, hot: bool) {
     app.areas.left_fixed = fixed;
     app.areas.left_list = list;
 
-    let max = app
-        .projects
-        .iter()
-        .flat_map(|p| p.spark.chunks(2).map(|c| c.iter().sum::<u32>()))
-        .max()
-        .unwrap_or(1)
-        .max(1);
-    let spark_on = inner.width >= 34;
     let hover = app.hover;
 
     let waiting = app.waiting_count();
@@ -256,7 +247,7 @@ fn draw_projects(f: &mut Frame, app: &mut App, area: Rect, hot: bool) {
         (Span::styled("◇", theme::dim()), "All sessions", app.sessions.len()),
     ];
     for (i, (icon, name, count)) in rows.into_iter().enumerate() {
-        let line = left_row(icon, name, count, None, inner.width, app.left_sel == i, false);
+        let line = left_row(icon, name, count, inner.width, app.left_sel == i, false);
         let r = Rect { y: fixed.y + i as u16, height: 1, ..fixed };
         f.render_widget(
             Paragraph::new(line).style(row_style(app.left_sel == i, hover == Some(Hover::Left(i)))),
@@ -289,9 +280,8 @@ fn draw_projects(f: &mut Frame, app: &mut App, area: Rect, hot: bool) {
         } else {
             Span::raw(" ")
         };
-        let spark = spark_on.then(|| spark(&p.spark, max));
         let selected = sel == Some(i);
-        let line = left_row(icon, &p.name, p.count, spark, inner.width, selected, false);
+        let line = left_row(icon, &p.name, p.count, inner.width, selected, false);
         let r = Rect { y: list.y + row as u16, height: 1, ..list };
         f.render_widget(
             Paragraph::new(line).style(row_style(selected, hover == Some(Hover::Left(i + 2)))),
@@ -300,39 +290,18 @@ fn draw_projects(f: &mut Frame, app: &mut App, area: Rect, hot: bool) {
     }
 }
 
-fn spark(days: &[u32; SPARK_DAYS], max: u32) -> String {
-    days.chunks(2)
-        .map(|c| {
-            let v: u32 = c.iter().sum();
-            if v == 0 {
-                ' '
-            } else {
-                let k = ((v as f32 / max as f32).sqrt() * 7.0).round() as usize;
-                BARS[k.min(7)]
-            }
-        })
-        .collect()
-}
-
 fn left_row(
     icon: Span<'static>,
     name: &str,
     count: usize,
-    spark: Option<String>,
     width: u16,
     selected: bool,
     _hover: bool,
 ) -> Line<'static> {
     let count_s = format!("{count:>3} ");
-    let spark_w = spark.as_ref().map_or(0, |s| s.width() + 1);
-    let name_w = (width as usize).saturating_sub(3 + spark_w + count_s.width());
+    let name_w = (width as usize).saturating_sub(3 + count_s.width());
     let name_style = if selected { theme::bright() } else { theme::text() };
     let mut spans = vec![Span::raw(" "), icon, Span::raw(" "), Span::styled(pad(&trunc(name, name_w), name_w), name_style)];
-    if let Some(s) = spark {
-        let c = if selected { theme::lerp(theme::FAINT, theme::ACCENT, 0.8) } else { theme::lerp(theme::FAINT, theme::DIM, 0.5) };
-        spans.push(Span::styled(s, Style::new().fg(c)));
-        spans.push(Span::raw(" "));
-    }
     spans.push(Span::styled(count_s, theme::faint()));
     Line::from(spans)
 }

@@ -29,7 +29,7 @@ pub struct Session {
     pub started: i64,
     pub updated: i64,
     pub prompts: u32,
-    /// Millisecond timestamps of each human prompt, for sparklines and stats.
+    /// Millisecond timestamps of each human prompt, for stats.
     pub prompt_times: Vec<i64>,
     pub cost: f64,
     pub files: Vec<String>,
