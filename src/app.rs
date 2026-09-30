@@ -169,6 +169,8 @@ pub struct App {
     pub focus: Focus,
     pub view: View,
     pub help: bool,
+    /// The start-up tips overlay.
+    pub tips: bool,
     pub query: String,
     pub searching: bool,
     pub store: Store,
@@ -249,6 +251,7 @@ impl App {
     pub fn new(indexer: Indexer) -> Self {
         let (tx, rx) = mpsc::channel();
         let sessions = indexer.sessions();
+        let store = Store::load();
         let mut app = Self {
             indexer,
             sessions,
@@ -264,9 +267,10 @@ impl App {
             focus: Focus::Sessions,
             view: View::Board,
             help: false,
+            tips: !store.hide_tips,
+            store,
             query: String::new(),
             searching: false,
-            store: Store::load(),
             toast: None,
             menu: None,
             hover: None,
@@ -678,6 +682,15 @@ impl App {
             self.help = false;
             return;
         }
+        if self.tips {
+            self.tips = false;
+            if k.code == KeyCode::Char('x') {
+                self.store.hide_tips = true;
+                self.store.save();
+                self.notify("Tips hidden. Press ? for every key");
+            }
+            return;
+        }
         if let Some(menu) = &mut self.menu {
             match k.code {
                 KeyCode::Up | KeyCode::Char('k') => menu.sel = menu.sel.saturating_sub(1),
@@ -843,9 +856,10 @@ impl App {
 
     pub fn on_mouse(&mut self, m: MouseEvent) {
         let (x, y) = (m.column, m.row);
-        if self.help {
+        if self.help || self.tips {
             if matches!(m.kind, MouseEventKind::Down(_)) {
                 self.help = false;
+                self.tips = false;
             }
             return;
         }

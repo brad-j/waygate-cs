@@ -44,6 +44,9 @@ pub fn draw(f: &mut Frame, app: &mut App, elapsed: Duration) {
         draw_menu(f, app, area);
     }
     let toast_rect = draw_toast(f, app, area);
+    if app.tips && app.view == View::Board {
+        draw_tips(f, area);
+    }
     if app.help {
         draw_help(f, area);
     }
@@ -214,6 +217,26 @@ fn draw_board(f: &mut Frame, app: &mut App, body: Rect) {
     }
     draw_sessions(f, app, mid, hot_l || hot_r);
     draw_detail(f, app, right, hot_r);
+    if show_left {
+        draw_grip(f, mid.x, body, hot_l);
+    }
+    draw_grip(f, right.x, body, hot_r);
+}
+
+/// A short dotted stretch on a draggable border, so it reads as a handle.
+/// Drawn on the left border of the pane to its right, which never carries a
+/// scrollbar.
+fn draw_grip(f: &mut Frame, x: u16, body: Rect, hot: bool) {
+    if body.height < 8 {
+        return;
+    }
+    let color = if hot { theme::ACCENT } else { theme::DIM };
+    let mid = body.y + body.height / 2;
+    for y in mid - 1..=mid + 1 {
+        if let Some(cell) = f.buffer_mut().cell_mut((x, y)) {
+            cell.set_char('┇').set_fg(color);
+        }
+    }
 }
 
 fn row_style(selected: bool, hovered: bool) -> Style {
@@ -868,6 +891,52 @@ fn draw_toast(f: &mut Frame, app: &App, screen: Rect) -> Option<Rect> {
         rect,
     );
     Some(rect)
+}
+
+fn draw_tips(f: &mut Frame, screen: Rect) {
+    let tips: &[(&str, &str)] = &[
+        ("drag a border", "resize panes; grab the ┇ handle"),
+        ("↵ / double-click", "resume in a new tab; R resumes here"),
+        ("amber ●", "Claude asked you something; d clears it"),
+        ("/", "search the full text of prompts and replies"),
+        ("t", "read the whole transcript"),
+        ("c", "short catch-up from Claude, costs a few cents"),
+        ("right-click", "more actions for a session"),
+        ("?", "every key and mouse control"),
+    ];
+    let w = 72.min(screen.width);
+    let h = (tips.len() as u16 + 5).min(screen.height);
+    let rect = Rect {
+        x: screen.x + (screen.width - w) / 2,
+        y: screen.y + (screen.height - h) / 2,
+        width: w,
+        height: h,
+    };
+    f.render_widget(Clear, rect);
+    let mut lines = vec![Line::default()];
+    for (k, d) in tips {
+        lines.push(Line::from(vec![
+            Span::styled(format!("  {}", pad(k, 20)), theme::accent()),
+            Span::styled(d.to_string(), theme::text()),
+        ]));
+    }
+    lines.push(Line::default());
+    lines.push(Line::from(vec![
+        Span::styled("  any key", theme::accent()),
+        Span::styled(" closes   ", theme::faint()),
+        Span::styled("x", theme::accent()),
+        Span::styled(" don't show again", theme::faint()),
+    ]));
+    f.render_widget(
+        Paragraph::new(lines).block(
+            TuiBlock::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(theme::accent())
+                .title(Line::from(Span::styled(" waygate-cs · tips ", theme::label())))
+                .style(Style::new().bg(theme::MENU_BG)),
+        ),
+        rect,
+    );
 }
 
 fn draw_help(f: &mut Frame, screen: Rect) {

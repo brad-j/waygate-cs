@@ -17,6 +17,9 @@ pub struct Store {
     pub right: Option<u16>,
     #[serde(default)]
     pub summaries: HashMap<String, Summary>,
+    /// Set when the user asks not to see the start-up tips again.
+    #[serde(default)]
+    pub hide_tips: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

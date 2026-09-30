@@ -42,9 +42,9 @@ Then run `waygate-cs` from anywhere.
 - **Transcript.** `t` shows the whole conversation, with tool calls folded into one-liners. Click one to expand it.
 - **Stats.** `s` shows sessions per week, cost by project, the most-used tools and the longest threads.
 - **Catch me up.** `c` asks Claude (Haiku, through `claude -p`) for a three-line summary of the session and caches it. It only runs when you press the key, and costs a few cents.
-- **Mouse.** Click, double-click, right-click for a menu, scroll any pane, drag the borders to resize (the widths are remembered), and click links to open them.
+- **Mouse.** Click, double-click, right-click for a menu, scroll any pane, drag the borders to resize at the ┇ grip (the widths are remembered), and click links to open them.
 
-Press `?` in the board for every key.
+A tips box lists the less obvious controls at start-up. Press any key to close it, or `x` to stop showing it. Press `?` in the board for every key.
 
 ## Files
 
@@ -52,7 +52,7 @@ Press `?` in the board for every key.
 |---|---|
 | `~/.claude/projects/*/*.jsonl` | Claude Code's transcripts, read only |
 | `~/Library/Caches/waygate-cs/index.json` (macOS) or `~/.cache/waygate-cs/` | Index cache, safe to delete |
-| `~/Library/Application Support/waygate-cs/state.json` (macOS) or `~/.local/share/waygate-cs/` | Done marks, pane widths, summaries. Read from the older `waygate` or `cs` folder if this one is missing |
+| `~/Library/Application Support/waygate-cs/state.json` (macOS) or `~/.local/share/waygate-cs/` | Done marks, pane widths, summaries, whether to show tips. Read from the older `waygate` or `cs` folder if this one is missing |
 
 ## Environment
 
