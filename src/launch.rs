@@ -3,11 +3,31 @@
 
 use std::{
     io::Write,
+    path::Path,
     process::{Command, Stdio},
 };
 
 pub fn claude_bin() -> String {
     std::env::var("WAYGATE_CS_CLAUDE").unwrap_or_else(|_| "claude".into())
+}
+
+/// angreal, a separate Claude Code front end. Resuming in it is offered only when it is installed.
+pub const ANGREAL: &str = "angreal";
+
+/// Whether `name` is an executable file in a `PATH` directory.
+pub fn on_path(name: &str) -> bool {
+    std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| is_executable(&d.join(name))))
+}
+
+#[cfg(unix)]
+fn is_executable(p: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    p.metadata().is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
+}
+
+#[cfg(not(unix))]
+fn is_executable(p: &Path) -> bool {
+    p.is_file()
 }
 
 pub enum Resume {
@@ -17,12 +37,12 @@ pub enum Resume {
     Here,
 }
 
-/// Opens `claude --resume <id>` in a new tab of the current terminal.
-pub fn resume_in_new_tab(cwd: &str, id: &str) -> Result<Resume, String> {
+/// Opens `<bin> --resume <id>` in a new tab of the current terminal.
+pub fn resume_in_new_tab(cwd: &str, id: &str, bin: &str) -> Result<Resume, String> {
     if std::env::var("WAYGATE_CS_RESUME").is_ok_and(|v| v == "here") {
         return Ok(Resume::Here);
     }
-    let cmd = format!("{} --resume {}", claude_bin(), id);
+    let cmd = format!("{bin} --resume {id}");
     if std::env::var_os("TMUX").is_some() {
         return tmux(cwd, &cmd).map(|_| Resume::Opened("tmux"));
     }
@@ -114,10 +134,10 @@ fn tmux(cwd: &str, cmd: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Replaces this process with `claude --resume <id>` in `cwd`.
-pub fn resume_here(cwd: &str, id: &str) -> anyhow::Result<()> {
+/// Replaces this process with `<bin> --resume <id>` in `cwd`.
+pub fn resume_here(cwd: &str, id: &str, bin: &str) -> anyhow::Result<()> {
     std::env::set_current_dir(cwd)?;
-    let mut cmd = Command::new(claude_bin());
+    let mut cmd = Command::new(bin);
     cmd.arg("--resume").arg(id);
     #[cfg(unix)]
     {
@@ -205,5 +225,11 @@ mod tests {
     fn quoting() {
         assert_eq!(sh_quote("it's"), r"'it'\''s'");
         assert_eq!(as_str(r#"a"b\c"#), r#"a\"b\\c"#);
+    }
+
+    #[test]
+    fn finds_binaries_on_path() {
+        assert!(on_path("sh"));
+        assert!(!on_path("waygate-cs-no-such-binary"));
     }
 }

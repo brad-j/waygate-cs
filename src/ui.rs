@@ -48,7 +48,7 @@ pub fn draw(f: &mut Frame, app: &mut App, elapsed: Duration) {
         draw_tips(f, area);
     }
     if app.help {
-        draw_help(f, area);
+        draw_help(f, app.angreal, area);
     }
 
     // Effects run over whatever was drawn this frame.
@@ -833,7 +833,8 @@ fn hbars(items: &[(String, f64, String)], width: u16) -> Vec<Line<'static>> {
 fn draw_menu(f: &mut Frame, app: &mut App, screen: Rect) {
     let Some(menu) = &app.menu else { return };
     let w = 30u16;
-    let h = Action::ALL.len() as u16 + 2;
+    let actions = app.actions();
+    let h = actions.len() as u16 + 2;
     let x = menu.x.min(screen.right().saturating_sub(w));
     let y = if menu.y + h > screen.bottom() { menu.y.saturating_sub(h) } else { menu.y };
     let rect = Rect { x, y, width: w, height: h };
@@ -847,7 +848,7 @@ fn draw_menu(f: &mut Frame, app: &mut App, screen: Rect) {
     f.render_widget(block, rect);
     let done = app.selected().is_some_and(|s| app.is_done(s));
     let no_art = app.selected().is_none_or(|s| s.artifacts.is_empty());
-    let lines: Vec<Line> = Action::ALL
+    let lines: Vec<Line> = actions
         .iter()
         .enumerate()
         .map(|(i, a)| {
@@ -939,8 +940,8 @@ fn draw_tips(f: &mut Frame, screen: Rect) {
     );
 }
 
-fn draw_help(f: &mut Frame, screen: Rect) {
-    let keys: &[(&str, &str)] = &[
+fn draw_help(f: &mut Frame, angreal: bool, screen: Rect) {
+    let mut keys: Vec<(&str, &str)> = vec![
         ("↵ / double-click", "resume in a new tab"),
         ("R", "resume here, replacing waygate-cs"),
         ("/", "search titles, prompts and replies"),
@@ -958,6 +959,9 @@ fn draw_help(f: &mut Frame, screen: Rect) {
         ("r", "reindex everything"),
         ("q", "quit"),
     ];
+    if angreal {
+        keys.insert(2, ("A", "resume in angreal"));
+    }
     let w = 76.min(screen.width);
     let h = (keys.len() as u16 + 6).min(screen.height);
     let rect = Rect {

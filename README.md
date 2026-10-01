@@ -37,7 +37,7 @@ Then run `waygate-cs` from anywhere.
 - **Three panes.** Projects on the left, with a session count each. Sessions in the middle, newest first. On the right, where the session left off: Claude's last reply rendered as Markdown, your last prompt, the files it wrote and any artifacts it published.
 - **Waiting on me.** Sessions where Claude spoke last and asked you something get an amber ●. Mark one done with `d` or by clicking its dot. New activity brings it back, and questions older than 14 days drop off on their own.
 - **Live.** Sessions active in the last 90 seconds pulse green, and the board updates as they change.
-- **Resume in a new tab.** `Enter` or a double-click opens `claude --resume` in a new tab, in the session's own folder, and leaves the board open. This works in tmux anywhere, and in Ghostty, iTerm2 and Terminal.app on macOS. In any other terminal, including every Linux terminal outside tmux, or with `R`, waygate-cs quits and resumes in the same window.
+- **Resume in a new tab.** `Enter` or a double-click opens `claude --resume` in a new tab, in the session's own folder, and leaves the board open. This works in tmux anywhere, and in Ghostty, iTerm2 and Terminal.app on macOS. In any other terminal, including every Linux terminal outside tmux, or with `R`, waygate-cs quits and resumes in the same window. If `angreal` is on your `PATH`, `A` resumes in it instead of Claude Code.
 - **Search.** `/` fuzzy-matches titles and project names and searches the full text of prompts and replies.
 - **Transcript.** `t` shows the whole conversation, with tool calls folded into one-liners. Click one to expand it.
 - **Stats.** `s` shows sessions per week, cost by project, the most-used tools and the longest threads.

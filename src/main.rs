@@ -85,9 +85,9 @@ fn main() -> Result<()> {
     ratatui::restore();
     result?;
 
-    if let Some((cwd, id)) = app.exec_on_exit.take() {
+    if let Some((cwd, id, bin)) = app.exec_on_exit.take() {
         println!("Resuming {id} in {}", app::tilde(&cwd));
-        launch::resume_here(&cwd, &id)?;
+        launch::resume_here(&cwd, &id, &bin)?;
     }
     Ok(())
 }

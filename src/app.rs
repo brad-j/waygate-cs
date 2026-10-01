@@ -79,6 +79,7 @@ impl Link {
 pub enum Action {
     ResumeTab,
     ResumeHere,
+    ResumeAngreal,
     Transcript,
     CatchUp,
     ToggleDone,
@@ -88,9 +89,10 @@ pub enum Action {
 }
 
 impl Action {
-    pub const ALL: [Action; 8] = [
+    pub const ALL: [Action; 9] = [
         Action::ResumeTab,
         Action::ResumeHere,
+        Action::ResumeAngreal,
         Action::Transcript,
         Action::CatchUp,
         Action::ToggleDone,
@@ -102,6 +104,7 @@ impl Action {
         match self {
             Action::ResumeTab => ("Resume in new tab", "↵"),
             Action::ResumeHere => ("Resume here", "R"),
+            Action::ResumeAngreal => ("Resume in angreal", "A"),
             Action::Transcript => ("Transcript", "t"),
             Action::CatchUp => ("Catch me up", "c"),
             Action::ToggleDone => ("Mark done / undone", "d"),
@@ -189,7 +192,10 @@ pub struct App {
     pub detail_fx: bool,
     pub view_fx: bool,
     pub quit: bool,
-    pub exec_on_exit: Option<(String, String)>,
+    /// Folder, session id and binary to resume once the board has closed.
+    pub exec_on_exit: Option<(String, String, String)>,
+    /// Whether angreal is installed, which adds "Resume in angreal" (`A`).
+    pub angreal: bool,
     last_poll: Instant,
     pub now: i64,
     pub started: Instant,
@@ -287,6 +293,7 @@ impl App {
             view_fx: false,
             quit: false,
             exec_on_exit: None,
+            angreal: launch::on_path(launch::ANGREAL),
             last_poll: Instant::now(),
             now: now_ms(),
             started: Instant::now(),
@@ -576,26 +583,32 @@ impl App {
 
     // ----- actions -------------------------------------------------------
 
+    /// The actions offered in the menu, leaving out angreal when it is not installed.
+    pub fn actions(&self) -> Vec<Action> {
+        Action::ALL.into_iter().filter(|&a| a != Action::ResumeAngreal || self.angreal).collect()
+    }
+
     pub fn act(&mut self, a: Action) {
         let Some(s) = self.selected().cloned() else {
             self.error("No session selected");
             return;
         };
         match a {
-            Action::ResumeTab | Action::ResumeHere => {
+            Action::ResumeTab | Action::ResumeHere | Action::ResumeAngreal => {
                 if !Path::new(&s.cwd).is_dir() {
                     self.error(format!("Folder is gone: {}", tilde(&s.cwd)));
                     return;
                 }
+                let bin = if a == Action::ResumeAngreal { launch::ANGREAL.to_string() } else { launch::claude_bin() };
                 if a == Action::ResumeHere {
-                    self.exec_on_exit = Some((s.cwd, s.id));
+                    self.exec_on_exit = Some((s.cwd, s.id, bin));
                     self.quit = true;
                     return;
                 }
-                match launch::resume_in_new_tab(&s.cwd, &s.id) {
+                match launch::resume_in_new_tab(&s.cwd, &s.id, &bin) {
                     Ok(Resume::Opened(term)) => self.notify(format!("Resumed in a new {term} tab")),
                     Ok(Resume::Here) => {
-                        self.exec_on_exit = Some((s.cwd, s.id));
+                        self.exec_on_exit = Some((s.cwd, s.id, bin));
                         self.quit = true;
                     }
                     Err(e) => self.error(format!(
@@ -691,12 +704,14 @@ impl App {
             }
             return;
         }
+        let actions = self.actions();
+        let n = actions.len();
         if let Some(menu) = &mut self.menu {
             match k.code {
                 KeyCode::Up | KeyCode::Char('k') => menu.sel = menu.sel.saturating_sub(1),
-                KeyCode::Down | KeyCode::Char('j') => menu.sel = (menu.sel + 1).min(Action::ALL.len() - 1),
+                KeyCode::Down | KeyCode::Char('j') => menu.sel = (menu.sel + 1).min(n - 1),
                 KeyCode::Enter => {
-                    let a = Action::ALL[menu.sel];
+                    let a = actions[menu.sel];
                     self.menu = None;
                     self.act(a);
                 }
@@ -786,6 +801,7 @@ impl App {
                 }
             }
             KeyCode::Char('R') => self.act(Action::ResumeHere),
+            KeyCode::Char('A') if self.angreal => self.act(Action::ResumeAngreal),
             KeyCode::Char('w') => self.toggle_waiting(),
             KeyCode::Char('d') => self.act(Action::ToggleDone),
             KeyCode::Char('o') => self.act(Action::OpenFolder),
@@ -879,7 +895,7 @@ impl App {
             let item = inside
                 .then(|| (y - rect.y) as usize)
                 .and_then(|r| r.checked_sub(1))
-                .filter(|&r| r < Action::ALL.len());
+                .filter(|&r| r < self.actions().len());
             match m.kind {
                 MouseEventKind::Moved => {
                     if let (Some(i), Some(menu)) = (item, self.menu.as_mut()) {
@@ -890,7 +906,8 @@ impl App {
                 MouseEventKind::Down(_) => {
                     self.menu = None;
                     if let Some(i) = item {
-                        self.act(Action::ALL[i]);
+                        let a = self.actions()[i];
+                        self.act(a);
                     }
                 }
                 _ => {}
