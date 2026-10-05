@@ -377,7 +377,7 @@ fn draw_sessions(f: &mut Frame, app: &mut App, area: Rect, hot: bool) {
             Span::styled("●", Style::new().fg(pulse(app)))
         } else if app.is_waiting(s) {
             Span::styled("●", Style::new().fg(theme::WAIT))
-        } else if s.awaiting && app.is_done(s) {
+        } else if app.awaits(s) && app.is_done(s) {
             Span::styled("✓", theme::faint())
         } else {
             Span::raw(" ")
@@ -444,7 +444,7 @@ fn detail_blocks(app: &App, s: &Session, width: u16) -> Vec<(Block, Option<Link>
         chips.push(Span::styled("● live", Style::new().fg(pulse(app))));
     } else if app.is_waiting(s) {
         chips.push(Span::styled("● waiting on you", Style::new().fg(theme::WAIT)));
-    } else if s.awaiting && app.is_done(s) {
+    } else if app.awaits(s) && app.is_done(s) {
         chips.push(Span::styled("✓ done", theme::dim()));
     }
     let mut meta = vec![Span::styled(tilde(&s.cwd), theme::dim())];

@@ -24,6 +24,7 @@ use crate::{
     store::{Store, Summary},
     summary,
     transcript::Transcript,
+    waiting::{self, Failure, Judge, Judgment},
 };
 
 const LIVE_WINDOW_MS: i64 = 90_000;
@@ -187,6 +188,9 @@ pub struct App {
     pub pending: HashSet<String>,
     tx: Sender<summary::Done>,
     rx: Receiver<summary::Done>,
+    /// Asks Jev whether sessions are waiting on you, when a key is set.
+    judge: Option<Judge>,
+    judged: waiting::Cache,
     pub fx: EffectManager<&'static str>,
     pub intro: bool,
     pub detail_fx: bool,
@@ -287,6 +291,8 @@ impl App {
             pending: HashSet::new(),
             tx,
             rx,
+            judge: waiting::Config::from_env().map(Judge::spawn),
+            judged: waiting::Cache::load(),
             fx: EffectManager::default(),
             intro: true,
             detail_fx: false,
@@ -301,6 +307,7 @@ impl App {
             matcher: Matcher::new(Config::DEFAULT),
         };
         app.rebuild();
+        app.ask_judge();
         app
     }
 
@@ -314,8 +321,13 @@ impl App {
         self.store.done.get(&s.id).is_some_and(|&t| s.updated <= t)
     }
 
+    /// Claude spoke last and needs something from you, done or not.
+    pub fn awaits(&self, s: &Session) -> bool {
+        self.judged.awaits(s)
+    }
+
     pub fn is_waiting(&self, s: &Session) -> bool {
-        s.awaiting && !self.is_done(s) && !self.is_live(s) && self.now - s.updated < WAITING_MAX_AGE_MS
+        self.awaits(s) && !self.is_done(s) && !self.is_live(s) && self.now - s.updated < WAITING_MAX_AGE_MS
     }
 
     pub fn waiting_count(&self) -> usize {
@@ -513,6 +525,7 @@ impl App {
                 Err(e) => self.error(format!("Summary failed: {}", crate::index::one_line(&e, 80))),
             }
         }
+        self.take_judgments();
         if self.last_poll.elapsed() >= POLL_EVERY {
             self.last_poll = Instant::now();
             if self.indexer.refresh().unwrap_or(false) {
@@ -520,6 +533,58 @@ impl App {
                 self.sessions = self.indexer.sessions();
                 self.rebuild();
             }
+            self.ask_judge();
+        }
+    }
+
+    /// Sends Jev each recent session that ended on Claude's reply and has no
+    /// judgment for its latest activity. Live sessions wait until they settle.
+    fn ask_judge(&mut self) {
+        if self.judge.is_none() {
+            return;
+        }
+        let want: Vec<usize> = (0..self.sessions.len())
+            .filter(|&i| {
+                let s = &self.sessions[i];
+                s.ends_with_reply
+                    && !self.is_live(s)
+                    && !self.is_done(s)
+                    && self.now - s.updated < WAITING_MAX_AGE_MS
+                    && self.judged.get(s).is_none()
+            })
+            .collect();
+        if let Some(judge) = &mut self.judge {
+            for i in want {
+                judge.ask(&self.sessions[i]);
+            }
+        }
+    }
+
+    fn take_judgments(&mut self) {
+        let Some(judge) = &self.judge else { return };
+        let done = judge.drain();
+        if done.is_empty() {
+            return;
+        }
+        let mut changed = false;
+        for d in done {
+            match d.result {
+                Ok(p) => {
+                    self.judged.insert(d.id, Judgment { updated: d.updated, p });
+                    changed = true;
+                }
+                Err(Failure::Refused(e)) => {
+                    self.judge = None;
+                    self.error(format!("Jev refused the request ({e}); using question marks"));
+                }
+                // Left unjudged until the session changes, so it keeps the question-mark check.
+                Err(Failure::Other(e)) => self.error(format!("Jev failed: {}", crate::index::one_line(&e, 70))),
+            }
+        }
+        if changed {
+            self.judged.prune(self.now - WAITING_MAX_AGE_MS);
+            self.judged.save();
+            self.rebuild();
         }
     }
 
@@ -941,7 +1006,7 @@ impl App {
                             .last_click
                             .is_some_and(|(t, j)| j == i && t.elapsed() < DOUBLE_CLICK);
                         self.set_sess(i);
-                        if on_dot && self.selected().is_some_and(|s| s.awaiting) {
+                        if on_dot && self.selected().is_some_and(|s| self.awaits(s)) {
                             self.act(Action::ToggleDone);
                             self.last_click = None;
                         } else if double {

@@ -9,6 +9,7 @@ mod summary;
 mod theme;
 mod transcript;
 mod ui;
+mod waiting;
 
 use std::{
     io::{IsTerminal, Write, stdout},
@@ -41,6 +42,9 @@ Environment:
   WAYGATE_CS_CLAUDE          the claude binary to launch (default claude)
   WAYGATE_CS_RESUME=here     always resume in place instead of a new tab
   WAYGATE_CS_SUMMARY_MODEL   model for catch-me-up summaries (default haiku)
+  WAYGATE_CS_JEV_KEY         judge Waiting on me with Jev (an OrcaRouter key by default)
+  WAYGATE_CS_JEV_URL         Jev endpoint (default https://api.orcarouter.ai/v1/systemone)
+  WAYGATE_CS_JEV_MODEL       Jev model (default typesafe/jev-1.13)
 
 Press ? inside the board for keys and mouse controls.";
 
@@ -120,10 +124,11 @@ fn run(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
 
 fn list() -> Result<()> {
     let indexer = Indexer::load(false)?;
+    let judged = waiting::Cache::load();
     let now = app::now_ms();
     let mut out = stdout().lock();
     for s in indexer.sessions() {
-        let flag = if s.awaiting { "?" } else { " " };
+        let flag = if judged.awaits(&s) { "?" } else { " " };
         let line = writeln!(
             out,
             "{:>7}  {}  {:<24}  {}  {}",

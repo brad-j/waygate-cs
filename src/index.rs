@@ -13,7 +13,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
 
-const CACHE_VERSION: u32 = 3;
+const CACHE_VERSION: u32 = 4;
 const MAX_FILES: usize = 60;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -37,6 +37,8 @@ pub struct Session {
     pub tools: Vec<(String, u32)>,
     /// Claude spoke last and ended on a question.
     pub awaiting: bool,
+    /// Claude spoke last, so the session may be waiting on the user.
+    pub ends_with_reply: bool,
     pub size: u64,
     pub mtime: i64,
 }
@@ -426,6 +428,7 @@ fn parse_file(path: &Path, size: u64, mtime: i64) -> Result<Session> {
     } else {
         turn.join("\n\n")
     };
+    s.ends_with_reply = claude_last;
     s.awaiting = claude_last && asks_question(&s.last_reply);
     s.title = custom_title
         .or(ai_title)
