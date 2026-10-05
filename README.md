@@ -77,17 +77,6 @@ Each request sends the last 1,000 bytes of Claude's last reply and nothing else 
 
 The defaults point at [OrcaRouter](https://www.orcarouter.ai/models/typesafe/jev-1.13), so an OrcaRouter key works as is. For TypeSafe's own API, set `WAYGATE_CS_JEV_URL=https://api.typesafe.ai/v1/systemone` and `WAYGATE_CS_JEV_MODEL=jev-latest`.
 
-## Releasing
-
-Bump `version` in `Cargo.toml`, commit, then tag and push:
-
-```sh
-git tag v0.2.0
-git push origin main v0.2.0
-```
-
-GitHub Actions builds macOS and Linux binaries with [dist](https://github.com/axodotdev/cargo-dist) and publishes them as a GitHub release. The workflow in `.github/workflows/release.yml` is generated; change `dist-workspace.toml` and run `dist generate` instead of editing it.
-
 ## License
 
 MIT
